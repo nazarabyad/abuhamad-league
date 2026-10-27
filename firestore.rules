@@ -8,6 +8,8 @@ service cloud.firestore {
     match /teams/{id}   { allow read: if true; allow write: if isAdmin(); }
     match /matches/{id} { allow read: if true; allow write: if isAdmin(); }
     match /cards/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /goals/{id}   { allow read: if true; allow write: if isAdmin(); }
+    match /log/{id}     { allow read, write: if isAdmin(); }
     match /admins/{id}  { allow read: if request.auth != null && request.auth.uid == id; }
   }
 }

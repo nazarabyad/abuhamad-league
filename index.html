@@ -31,7 +31,7 @@ const db=getFirestore(app);
 const NAMES=["القوز","الشروق","الأمل","القلعة","الشرطة","الكفاح","السد","الأهلي","السلام","السليم"];
 const COL=["#1e4fb5","#e08a1e","#1f9a4a","#c4182c","#14305f","#6b3fa0","#1b7f8c","#a3121f","#2a8de0","#6b6f76"];
 const WEEKS=["1-10,2-9,3-8,4-7,5-6","1-9,8-10,2-7,3-6,4-5","1-8,7-9,6-10,5-2,4-3","1-7,8-6,9-5,10-4,3-2","1-6,7-5,8-4,3-9,2-10","1-5,4-6,3-7,2-8,10-9","1-4,5-3,6-2,7-10,9-8","1-3,4-2,5-10,6-9,7-8","1-2,10-3,4-9,8-5,7-6"];
-let T={},M=[],C=[],user=null;
+let T={},M=[],C=[],G=[],L=[],user=null;
 const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
 const tn=id=>T[id]?`<i class="dot" style="background:${T[id].color}"></i>${e(T[id].name)}`:'؟';
@@ -39,18 +39,21 @@ const mine=()=>{try{return localStorage.getItem('club')}catch(x){return null}};
 onSnapshot(collection(db,'teams'),s=>{T={};s.forEach(d=>T[d.id]={...d.data(),id:d.id});render()});
 onSnapshot(collection(db,'matches'),s=>{M=s.docs.map(d=>({...d.data(),id:d.id}));render()});
 onSnapshot(collection(db,'cards'),s=>{C=s.docs.map(d=>({...d.data(),id:d.id}));render()});
+onSnapshot(collection(db,'goals'),s=>{G=s.docs.map(d=>({...d.data(),id:d.id}));render()});
 addEventListener('hashchange',render);
 function table(){const r={};Object.keys(T).forEach(id=>r[id]={id,p:0,w:0,d:0,l:0,gf:0,ga:0});
 M.filter(m=>m.done).forEach(m=>{const a=r[m.home],b=r[m.away];if(!a||!b)return;a.p++;b.p++;a.gf+=m.hg;a.ga+=m.ag;b.gf+=m.ag;b.ga+=m.hg;
 if(m.hg>m.ag){a.w++;b.l++}else if(m.hg<m.ag){b.w++;a.l++}else{a.d++;b.d++}});
 return Object.values(r).map(x=>({...x,gd:x.gf-x.ga,pts:x.w*3+x.d})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf)}
-function standings(){const t=table();return `<div class="box"><h2>ترتيب الدوري</h2><table><tr><th>#</th><th class="n">الفريق</th><th>لعب</th><th>ف</th><th>ت</th><th>خ</th><th>له</th><th>عليه</th><th>فرق</th><th>نقاط</th></tr>`+
+function standings(){const t=table();return `<div class="box"><h2>ترتيب الدوري <button class="g" onclick="shareS()">واتساب</button></h2><table><tr><th>#</th><th class="n">الفريق</th><th>لعب</th><th>ف</th><th>ت</th><th>خ</th><th>له</th><th>عليه</th><th>فرق</th><th>نقاط</th></tr>`+
 t.map((x,i)=>`<tr class="${i==0&&x.p?'top':''}"><td>${i+1}</td><td class="n">${tn(x.id)}</td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td class="pts">${x.pts}</td></tr>`).join('')+`</table></div>`}
 const cmp=(a,b)=>(a.ord??a.n)-(b.ord??b.n);
 const wt=m=>{const r=[];if(m.date)r.push(new Date(m.date+'T00:00').toLocaleDateString('ar-u-nu-latn',{weekday:'long',day:'numeric',month:'long'}));if(m.time){const[h,n]=m.time.split(':').map(Number);r.push((h%12||12)+':'+String(n).padStart(2,'0')+(h<12?' ص':' م'))}return r.length?r.join(' - '):(m.when?e(m.when):'')};
 const mrow=m=>`<div class="m"><span>${tn(m.home)}</span><b class="${m.pp&&!m.done?'pp':''}">${m.done?m.hg+' - '+m.ag:m.pp?'مؤجلة':'ضد'}</b><span>${tn(m.away)}</span>${wt(m)?`<small class="muted" style="grid-column:1/-1;text-align:center">${m.pp&&!m.done?'موعدها الجديد: ':'الموعد: '}${wt(m)}</small>`:''}${m.from?`<small class="muted" style="grid-column:1/-1;text-align:center">مؤجلة من الأسبوع ${m.from}</small>`:''}</div>`;
 function fixtures(list,title){const w={};list.forEach(m=>(w[m.week]=w[m.week]||[]).push(m));
-const x=Object.keys(w).sort((a,b)=>a-b).map(k=>`<div class="box"><h2>${title||''}الأسبوع ${k}</h2>`+w[k].sort(cmp).map(mrow).join('')+`</div>`).join('');return x?`<div class="grid">${x}</div>`:'<div class="box muted">لا توجد مباريات بعد.</div>'}
+const x=Object.keys(w).sort((a,b)=>a-b).map(k=>`<div class="box"><h2>${title||''}الأسبوع ${k} <button class="g" onclick="shareW(${k})">واتساب</button></h2>`+w[k].sort(cmp).map(mrow).join('')+`</div>`).join('');return x?`<div class="grid">${x}</div>`:'<div class="box muted">لا توجد مباريات بعد.</div>'}
+function scorers(){const o={};G.forEach(g=>{const k=g.team+'\u0001'+g.player;o[k]=(o[k]||0)+1});const l=Object.entries(o).map(([k,n])=>{const[t,p]=k.split('\u0001');return{t,p,n}}).sort((a,b)=>b.n-a.n);return `<div class="box"><h2>الهدافون</h2><table><tr><th>#</th><th class="n">اللاعب</th><th class="n">الفريق</th><th>أهداف</th></tr>`+(l.map((x,i)=>`<tr><td>${i+1}</td><td class="n">${e(x.p)}</td><td class="n">${tn(x.t)}</td><td class="pts">${x.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">لم تُسجل أهداف بعد</td></tr>')+`</table></div>`}
+const wa=t=>window.open('https://wa.me/?text='+encodeURIComponent(t+'\n'+location.origin+location.pathname.replace(/[^/]*$/,'')),'_blank');
 function cardsOf(team){const o={};C.filter(c=>c.team==team).forEach(c=>{const x=o[c.player]=o[c.player]||{y:0,r:0};c.type=='r'?x.r++:x.y++});return o}
 function club(){const id=mine();
 if(!id||!T[id])return `<div class="box"><h2>دخول النادي</h2><p class="muted">اكتب كود ناديك الذي أعطاه لك الاتحاد.</p><div class="row"><input id="code" placeholder="كود النادي"><button onclick="clubIn()">دخول</button></div></div>`;
@@ -58,8 +61,10 @@ const t=T[id],x=table().find(r=>r.id==id),pos=table().indexOf(x)+1,cs=cardsOf(id
 return `<div class="box"><h2>${tn(id)}</h2><div class="row"><span>المركز <b>${pos}</b></span><span>النقاط <b>${x.pts}</b></span><span>لعب <b>${x.p}</b></span><span>فرق الأهداف <b>${x.gd}</b></span></div><button class="r" onclick="clubOut()">خروج</button></div>`+
 `<div class="box"><h2>اللاعبون والكروت</h2><table>`+((t.players||[]).map(p=>`<tr><td class="n">${e(p)}</td><td>${cs[p]?.y?`<i class="y"></i> ${cs[p].y}`:''}</td><td>${cs[p]?.r?`<i class="rd"></i> ${cs[p].r}`:''}</td></tr>`).join('')||'<tr><td class="muted">لم تتم إضافة لاعبين بعد</td></tr>')+`</table></div>`+
 fixtures(M.filter(m=>m.home==id||m.away==id),'')}
-function render(){const h=location.hash||'#standings',tabs=[['#standings','الترتيب'],['#fixtures','الجدول'],['#club','ناديي']];$('nav').innerHTML=tabs.map(t=>`<a href="${t[0]}" class="${h==t[0]?'on':''}">${t[1]}</a>`).join('');$('app').innerHTML=h=='#fixtures'?fixtures(M):h=='#club'?club():standings()}
+function render(){const h=location.hash||'#standings',tabs=[['#standings','الترتيب'],['#fixtures','الجدول'],['#scorers','الهدافون'],['#club','ناديي']];$('nav').innerHTML=tabs.map(t=>`<a href="${t[0]}" class="${h==t[0]?'on':''}">${t[1]}</a>`).join('');$('app').innerHTML=h=='#fixtures'?fixtures(M):h=='#club'?club():h=='#scorers'?scorers():standings()}
 Object.assign(window,{
 clubIn(){const c=$('code').value.trim(),t=Object.values(T).find(x=>x.code==c);if(!t)return alert('الكود غير صحيح');try{localStorage.setItem('club',t.id)}catch(x){}render()},
-clubOut(){try{localStorage.removeItem('club')}catch(x){}render()},});
+clubOut(){try{localStorage.removeItem('club')}catch(x){}render()},
+shareS(){wa('ترتيب دوري أبوحمد\n'+table().map((x,i)=>`${i+1}. ${T[x.id].name} - ${x.pts} نقطة (لعب ${x.p})`).join('\n'))},
+shareW(k){wa(`مباريات الأسبوع ${k}\n`+M.filter(m=>m.week==k).sort(cmp).map(m=>`${T[m.home]?.name} ${m.done?m.hg+' - '+m.ag:'ضد'} ${T[m.away]?.name}${m.pp&&!m.done?' (مؤجلة)':''}${wt(m)?' - '+wt(m):''}`).join('\n'))},});
 </script></body></html>
