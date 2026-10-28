@@ -32,7 +32,7 @@ const db=getFirestore(app),auth=getAuth(app);
 const NAMES=["القوز","الشروق","الأمل","القلعة","الشرطة","الكفاح","السد","الأهلي","السلام","السليم"];
 const COL=["#1e4fb5","#e08a1e","#1f9a4a","#c4182c","#14305f","#6b3fa0","#1b7f8c","#a3121f","#2a8de0","#6b6f76"];
 const WEEKS=["1-10,2-9,3-8,4-7,5-6","1-9,8-10,2-7,3-6,4-5","1-8,7-9,6-10,5-2,4-3","1-7,8-6,9-5,10-4,3-2","1-6,7-5,8-4,3-9,2-10","1-5,4-6,3-7,2-8,10-9","1-4,5-3,6-2,7-10,9-8","1-3,4-2,5-10,6-9,7-8","1-2,10-3,4-9,8-5,7-6"];
-let T={},M=[],C=[],G=[],L=[],YL=2,user=null;
+let T={},M=[],C=[],G=[],YL=2,user=null;
 const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
 const tn=id=>T[id]?`<i class="dot" style="background:${T[id].color}"></i>${e(T[id].name)}`:'؟';
@@ -42,12 +42,11 @@ onSnapshot(collection(db,'matches'),s=>{M=s.docs.map(d=>({...d.data(),id:d.id}))
 onSnapshot(collection(db,'cards'),s=>{C=s.docs.map(d=>({...d.data(),id:d.id}));render()});
 onSnapshot(collection(db,'goals'),s=>{G=s.docs.map(d=>({...d.data(),id:d.id}));render()});
 onSnapshot(doc(db,'config','rules'),s=>{YL=s.exists()?(s.data().yl||2):2;render()});
-let unL;onAuthStateChanged(auth,u=>{user=u;if(unL){unL();unL=null}if(u)unL=onSnapshot(collection(db,'log'),q=>{L=q.docs.map(d=>d.data()).sort((a,b)=>b.ts-a.ts).slice(0,30);render()},()=>{});render()});
+onAuthStateChanged(auth,u=>{user=u;render()});
 const dirty={},opn={};
 ['input','change'].forEach(v=>document.addEventListener(v,x=>{if(x.target.id)dirty[x.target.id]=x.target.value}));
 document.addEventListener('toggle',x=>{if(x.target.id)opn[x.target.id]=x.target.open},true);
 document.addEventListener('click',x=>{if(x.target.tagName=='BUTTON')setTimeout(()=>{for(const k in dirty)delete dirty[k]},1500)});
-const lg=t=>user&&addDoc(collection(db,'log'),{who:user.email,what:t,ts:Date.now()}).catch(()=>{});
 addEventListener('unhandledrejection',()=>alert('تعذر الحفظ: تأكد أن حسابك مضاف ضمن مسؤولي الاتحاد'));
 function table(){const r={};Object.keys(T).forEach(id=>r[id]={id,p:0,w:0,d:0,l:0,gf:0,ga:0});
 M.filter(m=>m.done).forEach(m=>{const a=r[m.home],b=r[m.away];if(!a||!b)return;a.p++;b.p++;a.gf+=m.hg;a.ga+=m.ag;b.gf+=m.ag;b.ga+=m.hg;
@@ -79,7 +78,6 @@ h+=`<div class="box"><h2>تسجيل أهداف</h2><p class="muted">الخانة
 h+=`<div class="box"><h2>اللاعبون</h2>`+ids.map(i=>`<details id="pl${i}" ${opn['pl'+i]?'open':''}><summary>${tn(i)} (${(T[i].players||[]).length})</summary>`+(T[i].players||[]).map((p,k)=>`<div class="row">${e(p)} <button onclick="rp('${i}',${k})">تعديل</button><button class="r" onclick="dp('${i}',${k})">حذف</button></div>`).join('')+`</details>`).join('')+`</div>`;
 h+=`<div class="box"><h2>إضافة مباراة جديدة</h2><p class="muted">مثلاً فريق أجّلت مباراته وسيلعب مع فريق آخر هذا الأسبوع.</p><div class="row"><input class="s" id="nw" placeholder="أسبوع">${tsel('nh',1)}<span>ضد</span>${tsel('na',2)}<input type="date" id="nd"><input type="time" id="nt"><button class="g" onclick="addM()">إضافة</button></div></div>`;
 h+=`<div class="box"><h2>قاعدة الإيقاف</h2><p class="muted">عدد الإنذارات (الأصفر) المتراكمة للإيقاف مباراة واحدة. أصفر + أصفر في نفس المباراة = أحمر غير مباشر دائماً.</p><div class="row"><select id="yl"><option value="2" ${YL==2?'selected':''}>2 إنذار</option><option value="3" ${YL==3?'selected':''}>3 إنذارات</option></select><button onclick="saveYL()">حفظ</button></div></div>`;
-h+=`<div class="box"><h2>سجل التعديلات</h2>`+(L.map(x=>`<div class="muted">${new Date(x.ts).toLocaleString('ar-u-nu-latn')} - ${e(x.who)}: ${e(x.what)}</div>`).join('')||'<span class="muted">لا يوجد</span>')+`</div>`;
 h+=`<div class="box"><h2>أكواد الأندية</h2>`+ids.map(i=>`<div>${tn(i)}: <b>${e(T[i].code)}</b></div>`).join('')+`</div>`;
 const w={};M.forEach(m=>(w[m.week]=w[m.week]||[]).push(m));
 h+='<div class="grid">';Object.keys(w).sort((a,b)=>a-b).forEach(k=>{h+=`<div class="box"><h2>نتائج الأسبوع ${k}</h2>`+w[k].sort(cmp).map(m=>`<div class="m"><span>${tn(m.home)}</span><span class="row"><input class="s" id="h${m.id}" value="${m.done?m.hg:''}"><input class="s" id="a${m.id}" value="${m.done?m.ag:''}"><button onclick="res('${m.id}')">حفظ</button></span><span>${tn(m.away)}</span><div class="row" style="grid-column:1/-1;justify-content:center"><input type="date" id="d${m.id}" value="${m.date||''}"><input type="time" id="t${m.id}" value="${m.time||''}"><button onclick="wh('${m.id}')">حفظ الموعد</button><button class="g" onclick="pp('${m.id}')">${m.pp?'تعديل التأجيل':'تأجيل'}</button>${m.pp?`<button class="r" onclick="unpp('${m.id}')">إلغاء التأجيل</button>`:''}<button onclick="mv('${m.id}',-1)">▲</button><button onclick="mv('${m.id}',1)">▼</button><button class="g" onclick="mw('${m.id}')">نقل لأسبوع</button></div><div class="row" style="grid-column:1/-1;justify-content:center">${tsel('th'+m.id,m.home)}<span>ضد</span>${tsel('ta'+m.id,m.away)}<button onclick="tm('${m.id}')">تغيير الفريقين</button>${m.extra?`<button class="r" onclick="dm('${m.id}')">حذف المباراة</button>`:''}</div></div>`).join('')+`</div>`});h+='</div>';
@@ -111,7 +109,4 @@ delG(id){if(confirm('حذف الهدف؟'))deleteDoc(doc(db,'goals',id))},
 async rp(i,k){const t=T[i],old=t.players[k],nn=(prompt('الاسم الجديد للاعب',old)||'').trim();if(!nn||nn==old)return;const p=[...t.players];p[k]=nn;const b=writeBatch(db);b.update(doc(db,'teams',i),{players:p});C.filter(c=>c.team==i&&c.player==old).forEach(c=>b.update(doc(db,'cards',c.id),{player:nn}));G.filter(g=>g.team==i&&g.player==old).forEach(g=>b.update(doc(db,'goals',g.id),{player:nn}));await b.commit()},
 async dp(i,k){const t=T[i];if(!confirm('حذف اللاعب '+t.players[k]+'؟'))return;await updateDoc(doc(db,'teams',i),{players:t.players.filter((_,x)=>x!=k)})}});
 
-let ab=0;['alert','confirm','prompt'].forEach(k=>{const o=window[k].bind(window);window[k]=(...a)=>{const r=o(...a);if(k=='alert'||!r)ab=1;return r}});
-const LB={res:'تسجيل نتيجة',pp:'تأجيل مباراة',unpp:'إلغاء تأجيل',wh:'تعديل موعد',mw:'نقل مباراة لأسبوع',tm:'تغيير فريقي مباراة',addM:'إضافة مباراة',dm:'حذف مباراة',addP:'إضافة لاعب',addC:'تسجيل كرت',delC:'حذف كرت',addG:'تسجيل هدف',delG:'حذف هدف',rp:'تعديل اسم لاعب',dp:'حذف لاعب',seed:'تجهيز الدوري',saveYL:'تعديل قاعدة الإيقاف'};
-Object.keys(LB).forEach(k=>{const f=window[k];window[k]=async(...a)=>{ab=0;const r=await f(...a);if(!ab){const m=M.find(x=>x.id==a[0]);lg(LB[k]+(m?` - ${T[m.home]?.name} ضد ${T[m.away]?.name} (أسبوع ${m.week})`:T[a[0]]?` - ${T[a[0]].name}`:''))}return r}});
 </script></body></html>
