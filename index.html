@@ -35,6 +35,7 @@ let T={},M=[],C=[],G=[],L=[],user=null;
 const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const $=id=>document.getElementById(id);
 const tn=id=>T[id]?`<i class="dot" style="background:${T[id].color}"></i>${e(T[id].name)}`:'؟';
+const opn={};document.addEventListener('toggle',x=>{if(x.target.id)opn[x.target.id]=x.target.open},true);
 const mine=()=>{try{return localStorage.getItem('club')}catch(x){return null}};
 onSnapshot(collection(db,'teams'),s=>{T={};s.forEach(d=>T[d.id]={...d.data(),id:d.id});render()});
 onSnapshot(collection(db,'matches'),s=>{M=s.docs.map(d=>({...d.data(),id:d.id}));render()});
@@ -58,7 +59,7 @@ function club(){const id=mine();
 if(!id||!T[id])return `<div class="box"><h2>دخول النادي</h2><p class="muted">اكتب كود ناديك الذي أعطاه لك الاتحاد.</p><div class="row"><input id="code" placeholder="كود النادي"><button onclick="clubIn()">دخول</button></div></div>`;
 const t=T[id],x=table().find(r=>r.id==id),pos=table().indexOf(x)+1,cs=cardsOf(id);
 return `<div class="box"><h2>${tn(id)}</h2><div class="row"><span>المركز <b>${pos}</b></span><span>النقاط <b>${x.pts}</b></span><span>لعب <b>${x.p}</b></span><span>فرق الأهداف <b>${x.gd}</b></span></div><button class="r" onclick="clubOut()">خروج</button></div>`+
-`<div class="box"><h2>اللاعبون والكروت</h2><table>`+((t.players||[]).map(p=>`<tr><td class="n">${e(p)}</td><td>${cs[p]?.y?`<i class="y"></i> ${cs[p].y}`:''}</td><td>${cs[p]?.r?`<i class="rd"></i> ${cs[p].r}`:''}</td></tr>`).join('')||'<tr><td class="muted">لم تتم إضافة لاعبين بعد</td></tr>')+`</table></div>`+
+`<details class="box" id="plc" ${opn.plc?'open':''}><summary style="font-weight:700;font-size:17px;cursor:pointer">اللاعبون والكروت (${(t.players||[]).length})</summary><table>`+((t.players||[]).map(p=>`<tr><td class="n">${e(p)}</td><td>${cs[p]?.y?`<i class="y"></i> ${cs[p].y}`:''}</td><td>${cs[p]?.r?`<i class="rd"></i> ${cs[p].r}`:''}</td></tr>`).join('')||'<tr><td class="muted">لم تتم إضافة لاعبين بعد</td></tr>')+`</table></details>`+
 fixtures(M.filter(m=>m.home==id||m.away==id),'')}
 function render(){const h=location.hash||'#standings',tabs=[['#standings','الترتيب'],['#fixtures','الجدول'],['#scorers','الهدافون'],['#club','ناديي']];$('nav').innerHTML=tabs.map(t=>`<a href="${t[0]}" class="${h==t[0]?'on':''}">${t[1]}</a>`).join('');$('app').innerHTML=h=='#fixtures'?fixtures(M):h=='#club'?club():h=='#scorers'?scorers():standings()}
 Object.assign(window,{
