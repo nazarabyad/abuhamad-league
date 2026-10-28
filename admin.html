@@ -21,8 +21,9 @@ input.s{width:52px;text-align:center}button{background:var(--navy);color:#fff;bo
 .muted{color:#6a7390;font-size:13px}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .grid .box{margin:0}.grid{display:grid;gap:12px;margin-bottom:12px}
 @media(min-width:800px){main{max-width:1100px}.grid{grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}header{padding-inline:max(12px,calc((100vw - 1100px)/2))}body{font-size:16px}}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f9a4a;color:#fff;padding:10px 20px;border-radius:24px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;z-index:9;white-space:nowrap}#toast.on{opacity:1}
 </style></head><body>
-<header><h1>إدارة الاتحاد</h1><nav id="nav"></nav></header><main id="app">جاري التحميل...</main>
+<header><h1>إدارة الاتحاد</h1><nav id="nav"></nav></header><main id="app">جاري التحميل...</main><div id="toast"></div>
 <script type="module">
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getFirestore,collection,doc,setDoc,updateDoc,addDoc,deleteDoc,writeBatch,onSnapshot} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
@@ -90,7 +91,7 @@ login(){signInWithEmailAndPassword(auth,$('em').value,$('pw').value).catch(()=>a
 signOutA(){signOut(auth)},
 async seed(){const b=writeBatch(db);NAMES.forEach((n,i)=>b.set(doc(db,'teams',String(i+1)),{name:n,color:COL[i],code:String(1000+Math.floor(Math.random()*9000)),players:[]}));
 WEEKS.forEach((w,wi)=>w.split(',').forEach((p,i)=>{const[h,a]=p.split('-').map(Number);b.set(doc(db,'matches',`w${wi+1}m${i+1}`),{week:wi+1,n:i+1,home:String(h),away:String(a),done:false,hg:0,ag:0})}));await b.commit()},
-async addP(){const t=$('pt').value,n=$('pn').value.trim();if(!n)return;await updateDoc(doc(db,'teams',t),{players:[...(T[t].players||[]),n]})},
+async addP(){const t=$('pt').value,n=$('pn').value.trim();if(!n)return alert('اكتب اسم اللاعب');await updateDoc(doc(db,'teams',t),{players:[...(T[t].players||[]),n]})},
 fillP(c){[['ct','cp'],['gt','gp']].forEach(([a,b])=>{if($(a))$(b).innerHTML=(T[$(a).value]?.players||[]).map(p=>`<option>${e(p)}</option>`).join('')});if(c){delete dirty.cp;delete dirty.gp}},
 async addC(){if(!$('cp').value)return alert('أضف لاعباً أولاً');const w=parseInt($('cw').value);if(!w)return alert('اكتب رقم الأسبوع بالأرقام');await addDoc(collection(db,'cards'),{team:$('ct').value,player:$('cp').value,type:$('cy').value,week:String(w),m:Math.max(1,parseInt($('cm').value)||1)})},
 delC(id){if(confirm('حذف الكرت؟'))deleteDoc(doc(db,'cards',id))},
@@ -107,7 +108,13 @@ async cc(i){const v=(prompt('الكود الجديد للنادي',T[i].code)||'
 async saveYL(){await setDoc(doc(db,'config','rules'),{yl:+$('yl').value})},
 async addG(){const p=$('gp').value;if(!p)return alert('أضف لاعباً أولاً');await addDoc(collection(db,'goals'),{team:$('gt').value,player:p,week:$('gw').value,n:Math.max(1,parseInt($('gn').value)||1),ts:Date.now()})},
 delG(id){if(confirm('حذف الهدف؟'))deleteDoc(doc(db,'goals',id))},
-async rp(i,k){const t=T[i],old=t.players[k],nn=(prompt('الاسم الجديد للاعب',old)||'').trim();if(!nn||nn==old)return;const p=[...t.players];p[k]=nn;const b=writeBatch(db);b.update(doc(db,'teams',i),{players:p});C.filter(c=>c.team==i&&c.player==old).forEach(c=>b.update(doc(db,'cards',c.id),{player:nn}));G.filter(g=>g.team==i&&g.player==old).forEach(g=>b.update(doc(db,'goals',g.id),{player:nn}));await b.commit()},
+async rp(i,k){const t=T[i],old=t.players[k],nn=(prompt('الاسم الجديد للاعب',old)||'').trim();if(!nn)return;if(nn==old)return alert('لم يتغير الاسم');const p=[...t.players];p[k]=nn;const b=writeBatch(db);b.update(doc(db,'teams',i),{players:p});C.filter(c=>c.team==i&&c.player==old).forEach(c=>b.update(doc(db,'cards',c.id),{player:nn}));G.filter(g=>g.team==i&&g.player==old).forEach(g=>b.update(doc(db,'goals',g.id),{player:nn}));await b.commit()},
 async dp(i,k){const t=T[i];if(!confirm('حذف اللاعب '+t.players[k]+'؟'))return;await updateDoc(doc(db,'teams',i),{players:t.players.filter((_,x)=>x!=k)})}});
 
+
+let tt;const toast=m=>{const t=$('toast');t.textContent='✓ '+m;t.classList.add('on');clearTimeout(tt);tt=setTimeout(()=>t.classList.remove('on'),2200)};
+let ab=0;['alert','confirm','prompt'].forEach(k=>{const o=window[k].bind(window);window[k]=(...a)=>{const r=o(...a);if(k=='alert'||!r)ab=1;return r}});
+const OK={res:'تم حفظ النتيجة',pp:'تم تأجيل المباراة',unpp:'تم إلغاء التأجيل',wh:'تم حفظ الموعد',mw:'تم نقل المباراة',tm:'تم تغيير الفريقين',addM:'تمت إضافة المباراة',dm:'تم حذف المباراة',addP:'تمت إضافة اللاعب',addC:'تم تسجيل الكرت',delC:'تم حذف الكرت',addG:'تم تسجيل الأهداف',delG:'تم حذف الهدف',rp:'تم تعديل اللاعب',dp:'تم حذف اللاعب',cc:'تم تغيير الكود',saveYL:'تم حفظ القاعدة',seed:'تم تجهيز الدوري'};
+const CLR={addP:['pn'],addC:['cw'],addG:['gw'],addM:['nw','nd','nt']};
+Object.keys(OK).forEach(k=>{const f=window[k];window[k]=async(...a)=>{ab=0;const r=await f(...a);if(!ab){(CLR[k]||[]).forEach(i=>{delete dirty[i];const x=$(i);if(x)x.value=''});toast(OK[k])}return r}});
 </script></body></html>
