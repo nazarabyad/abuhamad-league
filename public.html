@@ -1,0 +1,70 @@
+<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>دوري أبوحمد</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#10224a;--gold:#f2b705;--bg:#f3f5fa;--ink:#16203a;--line:#dde2ee}
+*{box-sizing:border-box}body{margin:0;font-family:Cairo,sans-serif;background:var(--bg);color:var(--ink)}
+header{background:var(--navy);color:#fff;padding:14px 12px 0;position:sticky;top:0;z-index:5}
+h1{margin:0 0 8px;font-size:22px;font-weight:900;color:var(--gold)}
+nav{display:flex;gap:4px;overflow-x:auto}nav a{color:#cfd7ee;text-decoration:none;padding:9px 2px;flex:1;text-align:center;font-size:14px;border-radius:10px 10px 0 0;white-space:nowrap;font-weight:700}
+nav a.on{background:var(--bg);color:var(--navy)}
+main{padding:12px;max-width:760px;margin:auto}
+.box{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:12px;overflow-x:auto}
+h2{font-size:17px;margin:0 0 8px}table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:7px 4px;text-align:center;border-bottom:1px solid var(--line)}td.n,th.n{text-align:right}
+tr.top td{background:#fff8dc}.pts{font-weight:900;color:var(--navy)}
+.dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-left:6px}
+.m{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;padding:7px 0;border-bottom:1px solid var(--line)}
+.m b{background:var(--navy);color:#fff;border-radius:6px;padding:2px 10px;min-width:54px;text-align:center}.m span:nth-child(3){text-align:left}.m b.pp{background:#c4182c}
+input,select,button{font:inherit;padding:8px;border:1px solid var(--line);border-radius:8px;margin:2px 0}
+input.s{width:52px;text-align:center}button{background:var(--navy);color:#fff;border:0;font-weight:700}button.g{background:var(--gold);color:#222}button.r{background:#c4182c}
+.y{background:#f2b705;display:inline-block;width:11px;height:15px;border-radius:2px}.rd{background:#c4182c;display:inline-block;width:11px;height:15px;border-radius:2px}
+.muted{color:#6a7390;font-size:13px}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.grid .box{margin:0}.grid{display:grid;gap:12px;margin-bottom:12px}
+@media(min-width:800px){main{max-width:1100px}.grid{grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}header{padding-inline:max(12px,calc((100vw - 1100px)/2))}body{font-size:16px}}
+</style></head><body>
+<header><h1>دوري أبوحمد</h1><nav id="nav"></nav></header><main id="app">جاري التحميل...</main>
+<script type="module">
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {getFirestore,collection,doc,setDoc,updateDoc,addDoc,deleteDoc,writeBatch,onSnapshot} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyARIucb_F8amIvH4EYJgvBopN7eDgfYzHQ",authDomain:"abuhamad-league.firebaseapp.com",projectId:"abuhamad-league",storageBucket:"abuhamad-league.firebasestorage.app",messagingSenderId:"345300837084",appId:"1:345300837084:web:772bfbe4e88f2a7eda0a19"});
+const db=getFirestore(app);
+const NAMES=["القوز","الشروق","الأمل","القلعة","الشرطة","الكفاح","السد","الأهلي","السلام","السليم"];
+const COL=["#1e4fb5","#e08a1e","#1f9a4a","#c4182c","#14305f","#6b3fa0","#1b7f8c","#a3121f","#2a8de0","#6b6f76"];
+const WEEKS=["1-10,2-9,3-8,4-7,5-6","1-9,8-10,2-7,3-6,4-5","1-8,7-9,6-10,5-2,4-3","1-7,8-6,9-5,10-4,3-2","1-6,7-5,8-4,3-9,2-10","1-5,4-6,3-7,2-8,10-9","1-4,5-3,6-2,7-10,9-8","1-3,4-2,5-10,6-9,7-8","1-2,10-3,4-9,8-5,7-6"];
+let T={},M=[],C=[],G=[],L=[],YL=2,user=null;
+const e=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const $=id=>document.getElementById(id);
+const tn=id=>T[id]?`<i class="dot" style="background:${T[id].color}"></i>${e(T[id].name)}`:'؟';
+const opn={};document.addEventListener('toggle',x=>{if(x.target.id)opn[x.target.id]=x.target.open},true);
+const mine=()=>{try{return localStorage.getItem('club')}catch(x){return null}};
+onSnapshot(collection(db,'teams'),s=>{T={};s.forEach(d=>T[d.id]={...d.data(),id:d.id});render()});
+onSnapshot(collection(db,'matches'),s=>{M=s.docs.map(d=>({...d.data(),id:d.id}));render()});
+onSnapshot(collection(db,'cards'),s=>{C=s.docs.map(d=>({...d.data(),id:d.id}));render()});
+onSnapshot(collection(db,'goals'),s=>{G=s.docs.map(d=>({...d.data(),id:d.id}));render()});
+onSnapshot(doc(db,'config','rules'),s=>{YL=s.exists()?(s.data().yl||2):2;render()});
+addEventListener('hashchange',render);
+function table(){const r={};Object.keys(T).forEach(id=>r[id]={id,p:0,w:0,d:0,l:0,gf:0,ga:0});
+M.filter(m=>m.done).forEach(m=>{const a=r[m.home],b=r[m.away];if(!a||!b)return;a.p++;b.p++;a.gf+=m.hg;a.ga+=m.ag;b.gf+=m.ag;b.ga+=m.hg;
+if(m.hg>m.ag){a.w++;b.l++}else if(m.hg<m.ag){b.w++;a.l++}else{a.d++;b.d++}});
+return Object.values(r).map(x=>({...x,gd:x.gf-x.ga,pts:x.w*3+x.d})).sort((a,b)=>b.pts-a.pts||b.gd-a.gd||b.gf-a.gf)}
+function standings(){const t=table();return `<div class="box"><h2>ترتيب الدوري</h2><table><tr><th>#</th><th class="n">الفريق</th><th>لعب</th><th>ف</th><th>ت</th><th>خ</th><th>له</th><th>عليه</th><th>فرق</th><th>نقاط</th></tr>`+
+t.map((x,i)=>`<tr class="${i==0&&x.p?'top':''}"><td>${i+1}</td><td class="n">${tn(x.id)}</td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td class="pts">${x.pts}</td></tr>`).join('')+`</table></div>`}
+const cmp=(a,b)=>(a.ord??a.n)-(b.ord??b.n);
+const wt=m=>{const r=[];if(m.date)r.push(new Date(m.date+'T00:00').toLocaleDateString('ar-u-nu-latn',{weekday:'long',day:'numeric',month:'long'}));if(m.time){const[h,n]=m.time.split(':').map(Number);r.push((h%12||12)+':'+String(n).padStart(2,'0')+(h<12?' ص':' م'))}return r.length?r.join(' - '):(m.when?e(m.when):'')};
+const mrow=m=>`<div class="m"><span>${tn(m.home)}</span><b class="${m.pp&&!m.done?'pp':''}">${m.done?m.hg+' - '+m.ag:m.pp?'مؤجلة':'ضد'}</b><span>${tn(m.away)}</span>${wt(m)?`<small class="muted" style="grid-column:1/-1;text-align:center">${m.pp&&!m.done?'موعدها الجديد: ':'الموعد: '}${wt(m)}</small>`:''}${m.from?`<small class="muted" style="grid-column:1/-1;text-align:center">مؤجلة من الأسبوع ${m.from}</small>`:''}</div>`;
+function fixtures(list,title){const w={};list.forEach(m=>(w[m.week]=w[m.week]||[]).push(m));
+const x=Object.keys(w).sort((a,b)=>a-b).map(k=>`<div class="box"><h2>${title||''}الأسبوع ${k}</h2>`+w[k].sort(cmp).map(mrow).join('')+`</div>`).join('');return x?`<div class="grid">${x}</div>`:'<div class="box muted">لا توجد مباريات بعد.</div>'}
+function scorers(){const o={};G.forEach(g=>{const k=g.team+'\u0001'+g.player;o[k]=(o[k]||0)+(g.n||1)});const l=Object.entries(o).map(([k,n])=>{const[t,p]=k.split('\u0001');return{t,p,n}}).sort((a,b)=>b.n-a.n);return `<div class="box"><h2>الهدافون</h2><table><tr><th>#</th><th class="n">اللاعب</th><th class="n">الفريق</th><th>أهداف</th></tr>`+(l.map((x,i)=>`<tr><td>${i+1}</td><td class="n">${e(x.p)}</td><td class="n">${tn(x.t)}</td><td class="pts">${x.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">لم تُسجل أهداف بعد</td></tr>')+`</table></div>`}
+function status(team,pl){const cs=C.filter(c=>c.team==team&&c.player==pl).map(c=>({...c,w:parseInt(c.week)||0})),ev=[],yw={},rest=[];
+cs.filter(c=>c.type=='r').forEach(c=>ev.push({w:c.w,m:c.m||1,why:'أحمر مباشر'}));
+cs.filter(c=>c.type!='r').forEach(c=>(yw[c.w]=yw[c.w]||[]).push(c));
+Object.keys(yw).map(Number).sort((a,b)=>a-b).forEach(w=>{const a=yw[w];if(a.length>=2){ev.push({w,m:1,why:'أصفر + أصفر'});rest.push(...a.slice(2))}else rest.push(...a)});
+rest.forEach((c,i)=>{if((i+1)%YL==0)ev.push({w:c.w,m:1,why:YL+' إنذارات'})});
+const tm=M.filter(m=>m.home==team||m.away==team).sort((a,b)=>a.week-b.week||cmp(a,b)),used=new Set(),pend=[];
+ev.sort((a,b)=>a.w-b.w).forEach(x=>tm.filter(m=>m.week>x.w&&!used.has(m.id)).slice(0,x.m).forEach(m=>{used.add(m.id);if(!m.done)pend.push({m,why:x.why})}));
+return{pend,near:rest.length%YL==YL-1}}
+function bansTab(){const r=[];Object.keys(T).forEach(t=>(T[t].players||[]).forEach(p=>status(t,p).pend.forEach(x=>r.push({t,p,x}))));
+return `<div class="box"><h2>الإيقافات الحالية</h2><table><tr><th class="n">اللاعب</th><th class="n">الفريق</th><th>السبب</th><th>المباراة</th></tr>`+(r.map(z=>`<tr><td class="n">${e(z.p)}</td><td class="n">${tn(z.t)}</td><td>${z.x.why}</td><td>أسبوع ${z.x.m.week}<br><small class="muted">${e(T[z.x.m.home]?.name)} ضد ${e(T[z.x.m.away]?.name)}</small></td></tr>`).join('')||'<tr><td colspan="4" class="muted">لا يوجد موقوفون</td></tr>')+`</table></div>`}
+function cardsOf(team){const o={};C.filter(c=>c.team==team).forEach(c=>{const x=o[c.player]=o[c.player]||{y:0,r:0};c.type=='r'?x.r++:x.y++});return o}
+function render(){const h=location.hash||'#standings',tabs=[['#standings','الترتيب'],['#fixtures','الجدول'],['#scorers','الهدافون'],['#bans','الإيقافات']];$('nav').innerHTML=tabs.map(t=>`<a href="${t[0]}" class="${h==t[0]?'on':''}">${t[1]}</a>`).join('');$('app').innerHTML=h=='#fixtures'?fixtures(M):h=='#scorers'?scorers():h=='#bans'?bansTab():standings()}
+</script></body></html>
