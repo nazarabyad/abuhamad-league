@@ -21,7 +21,7 @@ input.s{width:52px;text-align:center}button{background:var(--navy);color:#fff;bo
 .muted{color:#6a7390;font-size:13px}.row{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .grid .box{margin:0}.grid{display:grid;gap:12px;margin-bottom:12px}
 @media(min-width:800px){main{max-width:1100px}.grid{grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}header{padding-inline:max(12px,calc((100vw - 1100px)/2))}body{font-size:16px}}
-.m b.live{background:#1f9a4a;animation:bl 1.2s infinite}@keyframes bl{50%{opacity:.55}}
+.m b.live{background:#1f9a4a;animation:bl 1.2s infinite}.lvl{color:#1f9a4a;font-weight:700}@keyframes bl{50%{opacity:.55}}
 </style></head><body>
 <header><h1>دوري أبوحمد</h1><nav id="nav"></nav></header><main id="app">جاري التحميل...</main>
 <script type="module">
@@ -52,8 +52,9 @@ function standings(){const t=table();return `<div class="box"><h2>ترتيب ا�
 t.map((x,i)=>`<tr class="${i==0&&x.p?'top':''}"><td>${i+1}</td><td class="n">${tn(x.id)}</td><td>${x.p}</td><td>${x.w}</td><td>${x.d}</td><td>${x.l}</td><td>${x.gf}</td><td>${x.ga}</td><td>${x.gd}</td><td class="pts">${x.pts}</td></tr>`).join('')+`</table></div>`}
 const cmp=(a,b)=>(a.ord??a.n)-(b.ord??b.n);
 const wt=m=>{const r=[];if(m.date)r.push(new Date(m.date+'T00:00').toLocaleDateString('ar-u-nu-latn',{weekday:'long',day:'numeric',month:'long'}));if(m.time){const[h,n]=m.time.split(':').map(Number);r.push((h%12||12)+':'+String(n).padStart(2,'0')+(h<12?' ص':' م'))}return r.length?r.join(' - '):(m.when?e(m.when):'')};
-const live=m=>{if(!m.date||!m.time||m.done)return false;const t=new Date(m.date+'T'+m.time).getTime(),n=Date.now();return n>=t&&n<t+7200000};
-const mrow=m=>`<div class="m"><span>${tn(m.home)}</span><b class="${live(m)?'live':m.pp&&!m.done?'pp':''}">${m.done?m.hg+' - '+m.ag:live(m)?'تجري الآن':m.pp?'مؤجلة':'ضد'}</b><span>${tn(m.away)}</span>${wt(m)?`<small class="muted" style="grid-column:1/-1;text-align:center">${m.pp&&!m.done?'موعدها الجديد: ':'الموعد: '}${wt(m)}</small>`:''}${m.from?`<small class="muted" style="grid-column:1/-1;text-align:center">مؤجلة من الأسبوع ${m.from}</small>`:''}</div>`;
+const PH=['تجري الآن','تجري الآن · الشوط الأول','نهاية الشوط الأول · استراحة','تجري الآن · الشوط الثاني'];
+const live=m=>{if(m.done)return false;if(m.live)return true;if(!m.date||!m.time)return false;const t=new Date(m.date+'T'+m.time).getTime(),n=Date.now();return n>=t&&n<t+7200000};
+const mrow=m=>`<div class="m"><span>${tn(m.home)}</span><b class="${live(m)?'live':m.pp&&!m.done?'pp':''}">${m.done||(m.ls&&live(m))?m.hg+' - '+m.ag:live(m)?'تجري الآن':m.pp?'مؤجلة':'ضد'}</b><span>${tn(m.away)}</span>${live(m)?`<small class="lvl" style="grid-column:1/-1;text-align:center">${PH[m.ph||0]}</small>`:''}${wt(m)?`<small class="muted" style="grid-column:1/-1;text-align:center">${m.pp&&!m.done?'موعدها الجديد: ':'الموعد: '}${wt(m)}</small>`:''}${m.from?`<small class="muted" style="grid-column:1/-1;text-align:center">مؤجلة من الأسبوع ${m.from}</small>`:''}</div>`;
 function fixtures(list,title){const w={};list.forEach(m=>(w[m.week]=w[m.week]||[]).push(m));
 const x=Object.keys(w).sort((a,b)=>a-b).map(k=>`<div class="box"><h2>${title||''}الأسبوع ${k}</h2>`+w[k].sort(cmp).map(mrow).join('')+`</div>`).join('');return x?`<div class="grid">${x}</div>`:'<div class="box muted">لا توجد مباريات بعد.</div>'}
 function scorers(){const o={};G.forEach(g=>{const k=g.team+'\u0001'+g.player;o[k]=(o[k]||0)+(g.n||1)});const l=Object.entries(o).map(([k,n])=>{const[t,p]=k.split('\u0001');return{t,p,n}}).sort((a,b)=>b.n-a.n);return `<div class="box"><h2>الهدافون</h2><table><tr><th>#</th><th class="n">اللاعب</th><th class="n">الفريق</th><th>أهداف</th></tr>`+(l.map((x,i)=>`<tr><td>${i+1}</td><td class="n">${e(x.p)}</td><td class="n">${tn(x.t)}</td><td class="pts">${x.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">لم تُسجل أهداف بعد</td></tr>')+`</table></div>`}
