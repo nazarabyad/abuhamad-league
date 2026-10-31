@@ -59,15 +59,15 @@ function fixtures(list,title){const w={};list.forEach(m=>(w[m.week]=w[m.week]||[
 const x=Object.keys(w).sort((a,b)=>a-b).map(k=>`<div class="box"><h2>${title||''}الأسبوع ${k}</h2>`+w[k].sort(cmp).map(mrow).join('')+`</div>`).join('');return x?`<div class="grid">${x}</div>`:'<div class="box muted">لا توجد مباريات بعد.</div>'}
 function scorers(){const o={};G.forEach(g=>{const k=g.team+'\u0001'+g.player;o[k]=(o[k]||0)+(g.n||1)});const l=Object.entries(o).map(([k,n])=>{const[t,p]=k.split('\u0001');return{t,p,n}}).sort((a,b)=>b.n-a.n);return `<div class="box"><h2>الهدافون</h2><table><tr><th>#</th><th class="n">اللاعب</th><th class="n">الفريق</th><th>أهداف</th></tr>`+(l.map((x,i)=>`<tr><td>${i+1}</td><td class="n">${e(x.p)}</td><td class="n">${tn(x.t)}</td><td class="pts">${x.n}</td></tr>`).join('')||'<tr><td colspan="4" class="muted">لم تُسجل أهداف بعد</td></tr>')+`</table></div>`}
 function status(team,pl){const cs=C.filter(c=>c.team==team&&c.player==pl).map(c=>({...c,w:parseInt(c.week)||0})),ev=[],yw={},rest=[];
-cs.filter(c=>c.type=='r').forEach(c=>ev.push({w:c.w,m:c.m||1,why:'أحمر مباشر'}));
-cs.filter(c=>c.type!='r').forEach(c=>(yw[c.w]=yw[c.w]||[]).push(c));
-Object.keys(yw).map(Number).sort((a,b)=>a-b).forEach(w=>{const a=yw[w];if(a.length>=2){ev.push({w,m:1,why:'أصفر + أصفر'});rest.push(...a.slice(2))}else rest.push(...a)});
+cs.filter(c=>c.type[0]=='r').forEach(c=>ev.push({w:c.w,m:c.m||1,why:'أحمر مباشر'}));
+cs.filter(c=>c.type[0]!='r').forEach(c=>{const k=c.w+(c.type=='yx'?'x':'');(yw[k]=yw[k]||[]).push(c)});
+Object.values(yw).sort((a,b)=>a[0].w-b[0].w).forEach(a=>{const w=a[0].w;if(a.length>=2){ev.push({w,m:1,why:'أصفر + أصفر'});rest.push(...a.slice(2))}else rest.push(...a)});
 rest.forEach((c,i)=>{if((i+1)%YL==0)ev.push({w:c.w,m:1,why:YL+' إنذارات'})});
 const tm=M.filter(m=>m.home==team||m.away==team).sort((a,b)=>a.week-b.week||cmp(a,b)),used=new Set(),pend=[];
 ev.sort((a,b)=>a.w-b.w).forEach(x=>tm.filter(m=>m.week>x.w&&!used.has(m.id)).slice(0,x.m).forEach(m=>{used.add(m.id);if(!m.done)pend.push({m,why:x.why})}));
 return{pend,near:rest.length%YL==YL-1}}
 function bansTab(){const r=[];Object.keys(T).forEach(t=>(T[t].players||[]).forEach(p=>status(t,p).pend.forEach(x=>r.push({t,p,x}))));
 return `<div class="box"><h2>الإيقافات الحالية</h2><table><tr><th class="n">اللاعب</th><th class="n">الفريق</th><th>السبب</th><th>المباراة</th></tr>`+(r.map(z=>`<tr><td class="n">${e(z.p)}</td><td class="n">${tn(z.t)}</td><td>${z.x.why}</td><td>أسبوع ${z.x.m.week}<br><small class="muted">${e(T[z.x.m.home]?.name)} ضد ${e(T[z.x.m.away]?.name)}</small></td></tr>`).join('')||'<tr><td colspan="4" class="muted">لا يوجد موقوفون</td></tr>')+`</table></div>`}
-function cardsOf(team){const o={};C.filter(c=>c.team==team).forEach(c=>{const x=o[c.player]=o[c.player]||{y:0,r:0};c.type=='r'?x.r++:x.y++});return o}
+function cardsOf(team){const o={};C.filter(c=>c.team==team).forEach(c=>{const x=o[c.player]=o[c.player]||{y:0,r:0};c.type[0]=='r'?x.r++:x.y++});return o}
 function render(){const h=location.hash||'#standings',tabs=[['#standings','الترتيب'],['#fixtures','الجدول'],['#scorers','الهدافون'],['#bans','الإيقافات']];$('nav').innerHTML=tabs.map(t=>`<a href="${t[0]}" class="${h==t[0]?'on':''}">${t[1]}</a>`).join('');$('app').innerHTML=h=='#fixtures'?fixtures(M):h=='#scorers'?scorers():h=='#bans'?bansTab():standings()}
 </script></body></html>
