@@ -45,11 +45,11 @@ onSnapshot(collection(db,'cards'),s=>{C=s.docs.map(d=>({...d.data(),id:d.id}));r
 onSnapshot(collection(db,'goals'),s=>{G=s.docs.map(d=>({...d.data(),id:d.id}));render()});
 onSnapshot(doc(db,'config','rules'),s=>{YL=s.exists()?(s.data().yl||2):2;render()});
 onAuthStateChanged(auth,u=>{user=u;render()});
-const dirty={},opn={},unl={};
+const dirty={},opn={},unl={},KEEP=['pt','ct','gt','cy','cp','gp','nh','na'];
 const lockDone=()=>document.querySelectorAll('#app .m[data-m]').forEach(r=>{const m=M.find(x=>x.id==r.dataset.m);if(m&&m.done&&!unl[m.id]){r.classList.add('lk');r.querySelectorAll('input,select,button').forEach(x=>{if(!x.classList.contains('unl'))x.disabled=true})}});
 ['input','change'].forEach(v=>document.addEventListener(v,x=>{if(x.target.id)dirty[x.target.id]=x.target.value}));
 document.addEventListener('toggle',x=>{if(x.target.id)opn[x.target.id]=x.target.open},true);
-document.addEventListener('click',x=>{if(x.target.tagName=='BUTTON')setTimeout(()=>{for(const k in dirty)delete dirty[k]},1500)});
+document.addEventListener('click',x=>{if(x.target.tagName=='BUTTON')setTimeout(()=>{for(const k in dirty)if(!KEEP.includes(k))delete dirty[k]},1500)});
 addEventListener('unhandledrejection',()=>alert('تعذر الحفظ: تأكد أن حسابك مضاف ضمن مسؤولي الاتحاد'));
 function table(){const r={};Object.keys(T).forEach(id=>r[id]={id,p:0,w:0,d:0,l:0,gf:0,ga:0});
 M.filter(m=>m.done).forEach(m=>{const a=r[m.home],b=r[m.away];if(!a||!b)return;a.p++;b.p++;a.gf+=m.hg;a.ga+=m.ag;b.gf+=m.ag;b.ga+=m.hg;
