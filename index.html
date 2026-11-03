@@ -62,7 +62,7 @@ function scorers(){const o={};G.forEach(g=>{const k=g.team+'\u0001'+g.player;o[k
 function status(team,pl){const cs=C.filter(c=>c.team==team&&c.player==pl).map(c=>({...c,w:parseInt(c.week)||0})),ev=[],yw={},rest=[];
 cs.filter(c=>c.type[0]=='r').forEach(c=>ev.push({w:c.w,m:c.m||1,why:'أحمر مباشر'}));
 cs.filter(c=>c.type[0]!='r').forEach(c=>{const k=c.w+(c.type=='yx'?'x':'');(yw[k]=yw[k]||[]).push(c)});
-Object.values(yw).sort((a,b)=>a[0].w-b[0].w).forEach(a=>{const w=a[0].w;if(a.length>=2){ev.push({w,m:1,why:'أصفر + أصفر'});rest.push(...a.slice(2))}else rest.push(...a)});
+Object.values(yw).sort((a,b)=>a[0].w-b[0].w).forEach(a=>{const w=a[0].w;if(a.length>=2){ev.push({w,m:1,why:'أصفر + أصفر (أحمر)'});rest.push(...a.slice(2))}else rest.push(...a)});
 rest.forEach((c,i)=>{if((i+1)%YL==0)ev.push({w:c.w,m:1,why:YL+' إنذارات'})});
 const tm=M.filter(m=>m.home==team||m.away==team).sort((a,b)=>a.week-b.week||cmp(a,b)),used=new Set(),pend=[];
 ev.sort((a,b)=>a.w-b.w).forEach(x=>tm.filter(m=>m.week>x.w&&!used.has(m.id)).slice(0,x.m).forEach(m=>{used.add(m.id);if(!m.done)pend.push({m,why:x.why})}));
